@@ -1,0 +1,44 @@
+module show_component (
+    input alufnvalue[6],
+    output address[3]
+  ) {
+  
+  // all legit ALUFN inputs
+  const ADD = b000000;
+  const SUB = b000001;
+  const MUL = b000010;
+  const AND = b011000;
+  const OR = b011110;
+  const XOR = b010110;
+  const ALDR = b011010;
+  const SHL = b100000;
+  const SHR = b100001;
+  const SRA = b100011;
+  const CMPEQADD = b110010;
+  const CMPEQSUB = b110011;
+  const CMPLTADD = b110100;
+  const CMPLTSUB = b110101;
+  const CMPLEADD = b110110;
+  const CMPLESUB = b110111;
+  
+  always {
+    // check for ALUFN input and gives output to be sent to result_ROM
+    
+    if ((alufnvalue == ADD) | (alufnvalue == SUB) | (alufnvalue == MUL)) { // ADDER component
+      address = b000;
+    }
+    else if ((alufnvalue == AND) | (alufnvalue == OR) | (alufnvalue == XOR) | (alufnvalue == ALDR)) { // BOOLEAN component
+      address = b001;
+    }
+    else if ((alufnvalue == SHL) | (alufnvalue == SHR) | (alufnvalue == SRA)) { // SHIFTER component
+      address = b010;
+    }
+    else if ((alufnvalue == CMPEQADD) | (alufnvalue == CMPLTADD) | (alufnvalue == CMPLEADD)
+    | (alufnvalue == CMPEQSUB) | (alufnvalue == CMPLTSUB) | (alufnvalue == CMPLESUB)) { // COMPARE component
+      address = b011;
+    }
+    else { // invalid ALUFN value
+      address = b100;
+    }
+  }
+}

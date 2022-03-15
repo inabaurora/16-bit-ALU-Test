@@ -1,0 +1,371 @@
+module answer_key (
+    input num[4],
+    input aluval[16],
+    input alufnval[6],
+    input vval[1],
+    output result[1],
+    output overflow[7]
+  ) {
+  
+  // all legit ALUFN inputs
+  const ADD = b000000;
+  const SUB = b000001;
+  const MUL = b000010;
+  const AND = b011000;
+  const OR = b011110;
+  const XOR = b010110;
+  const ALDR = b011010;
+  const SHL = b100000;
+  const SHR = b100001;
+  const SRA = b100011;
+  const CMPEQ = b110011;
+  const CMPLT = b110101;
+  const CMPLE = b110111;
+  
+  // hardcoded answer key
+  //===============================
+  // CASE 1 ADDER
+  const C1ADD = b0000000011001111; // 207
+  const C1SUB = b1111111100111011; // -197
+  const C1MUL = 0000001111110010; // 1010
+  // CASE 2 ADDER + POSITIVE OVERFLOW
+  const C2ADD = b01100000000000000; //49152
+  const C2SUB = b0011111111111110; //16382
+  const C2MUL = b0100000000000000011111111111111; //536887295
+  // CASE 3 ADDER + NEGATIVE OVERFLOW
+  const C3ADD = b11111111111111110000000000000001; //-65535
+  const C3SUB = b1111111111111111; //-1
+  const C3MUL = b00111111111111111000000000000000; //1073709056
+  // CASE 4 BOOLEAN
+  const C4AND = b0001000100100100;
+  const C4XOR = b0110110011001000;
+  const C4OR = b0111110111101100;
+  const C4ALDR = b0111000110101100;
+  // CASE 5 SHIFTER
+  const C5SHL = b1011010011100000;
+  const C5SHR = b0000010000101101;
+  const C5SRA = b1111110000101101;
+  // CASE 6 COMPARE (A < B)
+  const C6EQ = b0000000000000000;
+  const C6LT = b0000000000000001;
+  const C6LE = b0000000000000001;
+  // CASE 7 COMPARE (A = B)
+  const C7EQ = b0000000000000001;
+  const C7LT = b0000000000000000;
+  const C7LE = b0000000000000001;
+  // CASE 8 COMPARE (A > B)
+  const C8EQ = b0000000000000000;
+  const C8LT = b0000000000000000;
+  const C8LE = b0000000000000000;
+  
+  // RESULTS
+  const CORRECT = b1;
+  const INCORRECT = b0;
+  //================================
+  sig o[7];
+  sig i[1];
+  
+  always {
+    // default value
+    result = INCORRECT;
+    i = b0;
+    
+    // CASE 1 
+    if (num == b0000) {
+      
+      if (alufnval == ADD) {
+        if ((aluval == C1ADD) & (vval == b0)) { // for all calculations using adder, check if overflow has occurred
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1; // one of the inputs neccessary to show on io_seg that overflow has occurred
+        }
+      }
+      
+      if (alufnval == SUB) {
+        if ((aluval == C1SUB) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == MUL) {
+        if ((aluval == C1MUL) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+    }
+    
+    // CASE 2 
+    if (num == b0001) {
+      
+      if (alufnval == ADD) {
+        if ((aluval == C2ADD) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == SUB) {
+        if ((aluval == C2SUB) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == MUL) {
+        if ((aluval == C2MUL) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+    }
+    
+    // CASE 3 
+    if (num == b0010) {
+      
+      if (alufnval == ADD) {
+        if ((aluval == C3ADD) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == SUB) {
+        if ((aluval == C3SUB) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == MUL) {
+        if ((aluval == C3MUL) & (vval == b0)) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+    }
+    
+    // CASE 4
+    if (num == b0011) {
+      
+      if (alufnval == AND) {
+        if (aluval == C4AND) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == XOR) {
+        if (aluval == C4XOR) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == OR) {
+        if (aluval == C4OR) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+
+      if (alufnval == ALDR) {
+        if (aluval == C4ALDR) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+    }  
+    
+    // CASE 5 
+    if (num == b0100) {
+      
+      if (alufnval == SHL) {
+        if (aluval == C5SHL) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == SHR) {
+        if (aluval == C5SHR) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == SRA) {
+        if (aluval == C5SRA) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      } 
+    }
+    
+    // CASE 6 
+    if (num == b0101) {
+      
+      if (alufnval == CMPEQ) {
+        if (aluval == C6EQ) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLT) {
+        if (aluval == C6LT) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLE) {
+        if (aluval == C6LE) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+    }
+    
+    // CASE 7
+    if (num == b0110) {
+      
+      if (alufnval == CMPEQ) {
+        if (aluval == C7EQ) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLT) {
+        if (aluval == C7LT) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLE) {
+        if (aluval == C7LE) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+    }
+    
+    // CASE 8 
+    if (num == b0111) {
+      
+      if (alufnval == CMPEQ) {
+        if (aluval == C8EQ) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLT) {
+        if (aluval == C8LT) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+      
+      if (alufnval == CMPLE) {
+        if (aluval == C8LE) {
+          result = CORRECT;
+        }
+        else {
+          result = INCORRECT;
+          i = b1;
+        }
+      }
+    }
+    
+    //OVERFLOW CHECKER
+    
+    //DEFAULT VALUE
+    o = 7b1111111;   
+    
+    if (i == b1 & vval == b1 & aluval[15] == 0) { // negative overflow (display N)
+      o = 7b1001000;
+    }
+    if (i == b1 & vval == b1 & aluval[15] == 1) { // positive overflow (display P)
+      o = 7b0001100;
+    }
+    
+    overflow = o;
+  }
+}

@@ -1,0 +1,333 @@
+module fsm_test_cases (
+    input buttons[1],
+    input achange[1],
+    input manual[16],
+    input switch[1],
+    input alufnvalue[6],
+    input clk,
+    input rst,
+    output casenumber[4],
+    output out_component[3],
+    output out_result[16],
+    output zvn[3],
+    output overflow[7]
+  ) {
+  
+  // declaration of circuit components
+  alu alu_system;
+  
+  // declaration of component led check
+  show_component showcomponent;
+  
+  // register instantiation
+  dff recordA[16](#INIT(0),.clk(clk), .rst(rst));
+  dff component[3](#INIT(0),.clk(clk), .rst(rst));
+  
+  // FSM instantiation
+  fsm fsmtest(.clk(clk)) = {AMANUAL, BMANUAL, CASE1, CASE2, CASE3, CASE4, CASE5, CASE6, CASE7, CASE8, CASE9};
+  
+  // slowClock instantiation
+  const SLOWCLOCK_SIZE = 30; // roughly 10 seconds per cycle
+  counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
+  edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
+  
+  // hardcoded test case values
+  //=========================================
+  // TEST 1 ADDER
+  const A1 = b0000000000000101; // 5
+  const B1 = b0000000011001010; // 202
+
+  // TEST 2 ADDER + POSITIVE OVERFLOW
+  const A2 = b0111111111111111; //32767
+  const B2 = b0100000000000001; //16385
+  
+  // TEST 3 ADDER + NEGATIVE OVERFLOW
+  const A3 = b1000000000000000; //-32768
+  const B3 = b1000000000000001; //-32767
+  
+  // TEST 4 BOOLEAN 
+  const A4 = b0111000110101100; 
+  const B4 = b0001110101100100;
+  
+  // TEST 5 SHIFTER
+  const A5 = b1000010110100111;
+  const B5 = b0100101001000101;
+  
+  // TEST 6 COMPARE (A < B)
+  const A6 = b0001000110110111;
+  const B6 = b0011001100010001;
+
+  // TEST 7 COMPARE (A = B)
+  const A7 = b0001000110110111;
+  const B7 = b0001000110110111;
+
+  // TEST 8 COMPARE (A > B)
+  const A8 = b0011001100010001;
+  const B8 = b0001000110110111;
+
+
+  //==========================================
+  
+  // intermediate input to save case number
+  sig cn[4];
+  sig c[16];
+  sig v[1];
+  sig o[7];
+  
+  always {
+    // default values
+    alu_system.a = 16b0;
+    alu_system.b = 16b0;
+    alu_system.alufn_signal = alufnvalue;   
+    showcomponent.alufnvalue = alufnvalue;
+    cn = 4b0;
+    
+    //enable slowClock
+    slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE-1];
+    
+    case(fsmtest.q) {
+      // MANUAL
+      fsmtest.AMANUAL:
+      
+          recordA.d = manual; // records current manual input into recordA
+   
+          if (buttons[0]) {
+            fsmtest.d = fsmtest.CASE1; // button input changes the FSM from recording a manual input into conducting auto test
+            }
+          else if (switch == b1) {
+            fsmtest.d = fsmtest.BMANUAL; // when switch is turned on, state of FSM is changed with the current manual input recorded
+            }
+      
+      fsmtest.BMANUAL:
+          
+          alu_system.a = recordA.q; // recorded manual input from previous state is used as the A value
+          alu_system.b = manual; // current manually inputted value is used as the B value
+          alu_system.alufn_signal = alufnvalue; 
+          
+          showcomponent.alufnvalue = alufnvalue;
+          component.d = showcomponent.address; // receive address output from show_component to be sent to result_ROM
+        
+          if (buttons[0]) {
+            fsmtest.d = fsmtest.CASE1; // button input changes the FSM from recording a manual input into conducting auto test
+            }
+          else if (switch == b0) {
+            fsmtest.d = fsmtest.AMANUAL; // when switch is turned off, state of FSM goes back to recording the manual input for the A value
+            }
+        
+      // CASE 1
+      fsmtest.CASE1:
+        
+        if (achange == b0) {
+          alu_system.a = A1;
+        }
+        else {
+          alu_system.a = (A1 + b0000000000000001); // if io_dip connected to achange is switched on, change the A value input into the ALU
+        }
+        alu_system.b = B1;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue; // sends ALUFN value to showcomponent to retrieve address value
+        component.d = showcomponent.address; // receive address output from show_component to be sent to result_ROM
+        
+        cn = b0000; // in increasing binary value going down the cases
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; // button input changes 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE2; // changes the state of the FSM to the next case only if output of edge_detector is 1
+        }
+        
+      // CASE 2
+      fsmtest.CASE2:
+        
+        if (achange == b0) {
+          alu_system.a = A2;
+        }
+        else {
+          alu_system.a = (A2 + b0000000000000001);
+        }
+        alu_system.b = B2;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0001;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE3; 
+        }
+      
+      // CASE 3
+      fsmtest.CASE3:
+        
+        if (achange == b0) {
+          alu_system.a = A3;
+        }
+        else {
+          alu_system.a = (A3 + b0000000000000001);
+        }
+        alu_system.b = B3;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0010;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE4; 
+        }
+        
+      // CASE 4
+      fsmtest.CASE4:
+        
+        if (achange == b0) {
+          alu_system.a = A4;
+        }
+        else {
+          alu_system.a = (A4 + b0000000000000001);
+        }
+        alu_system.b = B4;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0011;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE5; 
+        }
+      
+      // CASE 5
+      fsmtest.CASE5:
+        
+        if (achange == b0) {
+          alu_system.a = A5;
+        }
+        else {
+          alu_system.a = (A5 + b0000000000000001);
+        }
+        alu_system.b = B5;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0100;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE6;
+        }
+        
+      // CASE 6
+      fsmtest.CASE6:
+        
+        if (achange == b0) {
+          alu_system.a = A6;
+        }
+        else {
+          alu_system.a = (A6 + b0000000000000001);
+        }
+        alu_system.b = B6;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0101;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE7;
+        }
+
+      // CASE 7
+      fsmtest.CASE7:
+        
+        if (achange == b0) {
+          alu_system.a = A7;
+        }
+        else {
+          alu_system.a = (A7 + b0000000000000001);
+        }
+        alu_system.b = B7;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0110;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE8;
+        }
+
+       // CASE 8
+      fsmtest.CASE8:
+        
+        if (achange == b0) {
+          alu_system.a = A8;
+        }
+        else {
+          alu_system.a = (A8 + b0000000000000001);
+        }
+        alu_system.b = B8;
+        alu_system.alufn_signal = alufnvalue;
+        
+        showcomponent.alufnvalue = alufnvalue;
+        component.d = showcomponent.address;
+        cn = b0111;
+        
+        if (buttons[0]) {
+          fsmtest.d = fsmtest.AMANUAL; 
+        }
+        
+        if (slowClockEdge.out == b1) {
+          fsmtest.d = fsmtest.CASE1; // change back to the state of the first testcase of the auto-test
+        }
+    }
+    
+    // output values 
+    casenumber = cn;
+    out_component = component.q;
+    out_result = alu_system.c; 
+    zvn = alu_system.zvn;
+    
+    // intermediate values to be checked for overflow output
+    c = alu_system.c;
+    v = alu_system.zvn[1];
+    
+    // overflow
+    o = 7b1111111;   
+
+    if (v == b1 & c[15] == 0) { // negative overflow (display N)
+      o = 7b1001000;
+    }
+    if (v == b1 & c[15] == 1) { // positive overflow (display P)
+      o = 7b0001100;
+    }
+    
+    overflow = o;
+  }
+}

@@ -1,0 +1,20 @@
+module result_ROM (
+  // receives input based on the alufn_signal provided
+  // read const from right to left based on increasing binary number
+  	input address[3], 
+  
+  // output represents which LEDs light up on the IO board
+  // b0001: adder
+  // b0010: compare
+  // b0100: boolean
+  // b1000: shifter
+  // b0000: invalid
+  	output value[4] 
+  ) 
+{
+  const RESULT_ROM = {4b0, b1000, b0100, b0010, b0001};
+  
+  always {
+	      value = RESULT_ROM[address];
+  }
+}

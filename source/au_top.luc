@@ -1,0 +1,92 @@
+module au_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input usb_rx,           // USB->Serial input
+    output usb_tx,          // USB->Serial output
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8]     // DIP switches on IO Shield
+  ) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+
+    .rst(rst) {
+      multi_seven_seg seg;
+      multi_dec_ctr dec_ctr;
+      counter ctr (#SIZE(1), #DIV(24));
+    }
+    button_conditioner buttoncond[1]; // conditions the button to only record 1 input
+    edge_detector buttondetector[1](#RISE(1), #FALL(0)); //detect on rising edge only
+    edge_detector edge_detector (#RISE(1), #FALL(0));
+  
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+  }
+  
+  // ROM instantiation
+  result_ROM romtest;
+  
+  // FSM instantiation
+  fsm_test_cases fsmchecker(.clk(clk), .rst(rst));
+  
+  // instantiation of answer_key
+  answer_key anskey;
+  
+  always {
+    reset_cond.in = ~rst_n;   // input raw inverted reset signal
+    rst = reset_cond.out;     // conditioned reset
+    
+    usb_tx = usb_rx;          // loop serial port
+    
+    edge_detector.in = ctr.value;
+    dec_ctr.inc = edge_detector.out;
+    seg.values = dec_ctr.digits;
+    
+    led = 8h00;    // turn LEDs off
+    
+    io_seg = 8hff;      // segments turned off
+    io_sel = ~4h1;      // right most digit enabled
+    
+    buttoncond.in = io_button[0];
+    buttondetector.in = buttoncond.out;
+    
+    //BUTTON input into the alu to swap between states
+    fsmchecker.buttons = buttondetector.out;
+    
+    // inputs from IO board to fsm_checker
+    fsmchecker.manual[15:8] = io_dip[1];
+    fsmchecker.manual[7:0] = io_dip[0];
+    fsmchecker.alufnvalue = io_dip[2][5:0];
+    
+    fsmchecker.achange = io_dip[2][6]; // input enables inversion of the A value
+    fsmchecker.switch = io_dip[2][7]; // input stores manually inputted A value 
+    
+    
+    // output from fsm_checker to ROM
+    romtest.address = fsmchecker.out_component; // takes the ALUFN assigned value to check with the ROM which component of the ALU is being used
+    
+    // retrieve ALU computed outputs to compare with the answer_key
+    anskey.num = fsmchecker.casenumber; // takes the case number to compare with the respective answer key
+    anskey.aluval = fsmchecker.out_result; // takes the ALU output to compare with the answer key
+    anskey.alufnval = io_dip[2][5:0]; //  records the manually input ALUFN value 
+    anskey.vval = fsmchecker.zvn[1]; // inputs the V value from the ALU
+    
+    // outputs to IO board
+    io_led[2][7] = anskey.result; // lights up if answer is correct
+    io_led[2][6:4] = fsmchecker.zvn; // outputs ZVN values
+    io_led[2][3:0] = romtest.value; // takes output from result_ROM and activates io_led accordingly
+    io_led[1] = fsmchecker.out_result[15:8]; // (left to right) first 8 bits
+    io_led[0] = fsmchecker.out_result[7:0]; // last 8 bits
+
+    
+    // show positive or negative overflow
+    io_seg = fsmchecker.overflow;
+    io_seg = anskey.overflow;
+  }
+}
