@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="1d_alu_checkoff" board="Alchitry Au" language="Lucid" version="3">
+  <files>
+    <src>seven_seg.luc</src>
+    <component>simple_dual_ram.v</component>
+    <src>multi_seven_seg.luc</src>
+    <src>result_ROM.luc</src>
+    <component>pipeline.luc</component>
+    <src>boolean.luc</src>
+    <component>counter.luc</component>
+    <src>answer_key.luc</src>
+    <src>adder.luc</src>
+    <component>decoder.luc</component>
+    <src>alu.luc</src>
+    <src>multi_dec_ctr.luc</src>
+    <src>fsm_test_cases.luc</src>
+    <src>shifter.luc</src>
+    <component>simple_ram.v</component>
+    <src>compare.luc</src>
+    <src>show_component.luc</src>
+    <src>decimal_counter.luc</src>
+    <component>reset_conditioner.luc</component>
+    <component>edge_detector.luc</component>
+    <src top="true">au_top.luc</src>
+    <component>button_conditioner.luc</component>
+    <constraint lib="true">alchitry.acf</constraint>
+    <constraint lib="true">io.acf</constraint>
+    <constraint lib="true">au.xdc</constraint>
+  </files>
+</project>
